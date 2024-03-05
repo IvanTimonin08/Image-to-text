@@ -1,23 +1,24 @@
-import streamlit as st
-from transformers import ViTImageProcessor, ViTForImageClassification
-from PIL import Image
+from transformers import AutoProcessor, AutoModel
 import requests
+from PIL import Image
+import numpy as np
+import streamlit as st
 
-# Load the image from the URL
-url = 'http://images.cocodataset.org/val2017/000000039769.jpg'
+processor = AutoProcessor.from_pretrained("microsoft/git-base")
+model = AutoModel.from_pretrained("microsoft/git-base")
+
+url = "http://images.cocodataset.org/val2017/000000039769.jpg"
 image = Image.open(requests.get(url, stream=True).raw)
 
-# Load the processor and model
-processor = ViTImageProcessor.from_pretrained("microsoft/git-base")
-model = ViTForImageClassification.from_pretrained("microsoft/git-base")
+text = "this is an image of two cats"
 
-# Process the image and make predictions
-inputs = processor(images=image, return_tensors="pt")
+inputs = processor(text, images=image, return_tensors="pt")
+
 outputs = model(**inputs)
-logits = outputs.logits
-predicted_class_idx = logits.argmax(-1).item()
-predicted_class = model.config.id2label[predicted_class_idx]
+last_hidden_state = outputs.last_hidden_state
 
-# Display the predicted class using Streamlit
-st.image(image, caption='Input Image', use_column_width=True)
-st.write("Predicted class:", predicted_class)
+# Преобразование тензора изображения в изображение типа numpy для отображения с помощью st.image()
+image_array = np.array(image)
+st.image(image_array, caption='Input Image', use_column_width=True)
+
+# Дальнейший код для обработки last_hidden_state и использования его результатов
